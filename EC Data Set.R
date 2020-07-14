@@ -1,4 +1,5 @@
-education_equity <- read.csv(educationgap_csv.csv)
+##########################
+# Education Equity Files # 
 
 #Set Up!
 library(dplyr)
@@ -7,8 +8,9 @@ library(dplyr)
 library(readr)
 library(stringr)
 library(tidyverse)
-setwd("/Users/savannahholmes/Desktop/GitHub/cvilleequity_readingsol")
 
+
+setwd("/Volumes/GoogleDrive/My Drive/Equity Center/SamsGithub/cvilleequity_readingsol")
 
 #CSV
 educationgap <- read.csv("educationgap.csv")
@@ -20,13 +22,72 @@ homeless <- read.csv("homeless.csv")
 migrant <- read.csv("migrant.csv")
 disabled <- read.csv("disabled.csv")
 
-------------------------------------------------------------------
-#Pass Rates by State 
+
+# Pass Rate By State ------------------------------------------------------
 
 #State Data
 state <- educationgap %>% 
   filter(Level == 'State') %>%
   select(-Division.Number,-Division.Name,-Test.Source)
+
+
+graphable_data <-
+state %>%
+  arrange(School.Year, Subject, Test.Level) %>%
+ separate(Test.Level, c(NA, "TestLevel"), sep = " ") %>%
+  mutate(TestLevel = as.numeric(TestLevel)) %>%
+  filter(Grade == TestLevel) %>%
+  separate(School.Year, c("SchoolYearStart", "SchoolYearEnd"), sep = "-") %>%
+  mutate_at(vars(SchoolYearStart:SchoolYearEnd), as.numeric) %>%
+  as_tibble() %>%
+  filter(Subject == "English:Reading") %>%
+  separate(Race, c("Race", NA), sep = ", ") %>%
+  select(SchoolYearStart, Race, Grade, Pass.Count, Total.Count, Pass.Rate) %>%
+  group_by(Race, Grade) %>%
+  arrange(Race, Grade, SchoolYearStart) %>%
+  mutate(Cohort = 1:n()) %>%
+  mutate(Cohort = case_when(
+    Grade == 3 ~ Cohort,
+    Grade == 8 ~ Cohort - as.integer(6)
+  )) %>%
+  filter(Cohort > 0, Cohort < 9)  %>%
+  mutate(Pass.Rate = as.numeric(Pass.Rate)) %>%
+ group_by(Race, Cohort) %>%
+ mutate(Race_Cohort = interaction(Race, Cohort)) 
+
+graphable_mean <-
+graphable_data %>%
+  group_by(Race, Grade) %>%
+  summarize(Pass.Rate = mean(Pass.Rate)) %>%
+  mutate(Cohort = 10, Race_Cohort = interaction(Race, Cohort)) %>%
+  bind_rows(graphable_data) %>%
+  mutate(alpha = ifelse(Cohort == 10, 1, .3))
+
+
+ggplot(graphable_data, aes(x = Pass.Rate, y = Grade, color = Race, group = Race_Cohort)) +
+  geom_point() +
+  geom_line() +
+  facet_wrap(~Cohort) +
+  coord_flip()
+
+ggplot(graphable_mean, aes(x = Grade, y = Pass.Rate, color = Race, group = Race_Cohort, alpha = alpha)) +
+  geom_point() +
+  geom_line() +
+  scale_alpha_continuous( range = c(.2, 1))
+
+graphable_data
+
+summary(lm(Pass.Rate ~ Race + Cohort, data = graphable_data))
+
+summary(lm(Pass.Rate ~ Race*Grade, data = graphable_data))
+
+
+graphable_data %>%
+  select(Race, Cohort, Grade, Pass.Rate) %>%
+  spread()
+
+
+
 
 ------------------------------------------------------------------
 #Pass Rates by Division 
