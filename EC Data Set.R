@@ -42,7 +42,7 @@ state %>%
   as_tibble() %>%
   filter(Subject == "English:Reading") %>%
   separate(Race, c("Race", NA), sep = ", ") %>%
-  select(SchoolYearStart, Race, Grade, Pass.Count, Total.Count, Pass.Rate) %>%
+  select(SchoolYearStart, Race, Grade, TestLevel, Pass.Count, Total.Count, Pass.Rate) %>%
   group_by(Race, Grade) %>%
   arrange(Race, Grade, SchoolYearStart) %>%
   mutate(Cohort = 1:n()) %>%
