@@ -68,7 +68,8 @@ ggplot(graphable_data, aes(x = Pass.Rate, y = Grade, color = Race, group = Race_
   geom_point() +
   geom_line() +
   facet_wrap(~Cohort) +
-  coord_flip()
+  coord_flip() +
+  theme_bw()
 
 ggplot(graphable_mean, aes(x = Grade, y = Pass.Rate, color = Race, group = Race_Cohort, alpha = alpha)) +
   geom_point() +
